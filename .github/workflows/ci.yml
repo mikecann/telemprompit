@@ -1,0 +1,25 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check shell syntax
+        run: |
+          for script in install.sh setup_mac.sh build-app.sh restart.sh kill.sh telemprompit; do
+            bash -n "$script"
+          done
+      - name: Test
+        env:
+          TELEMPROMPIT_SKIP_PASTEBOARD_TESTS: "1"
+        run: swift test
+      - name: Build release executable
+        run: swift build -c release

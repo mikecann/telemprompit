@@ -1,13 +1,71 @@
+# <img src="icons/telemprompit.png" width="32" alt=""> telemprompit
+
+Paste your notes and read them off the Elgato Prompter one line at a time
+
+macOS
+
+<!-- media: hero -->
+<!-- ![telemprompit](docs/hero.png) -->
+<!-- media: hero -->
+
+## What it is
+
+A teleprompter I use for talking-head recordings. You paste in your notes, plain text or Notion bullets, and it shows them on the Elgato Prompter with the current line highlighted.
+
+You can step through line by line or let it auto-scroll, and a presentation clicker works from any app, which is nice when I'm demoing something else at the same time.
+
 ![Telemprompit](docs/header.png)
 
 ![Telemprompit stepping through notes](docs/ss1.png)
 
-# telemprompit
+## Get it
 
-A native macOS teleprompter for talking-head recordings. Paste your notes and
-it opens them on the Elgato Prompter, one line at a time.
+Paste this into your AI coding agent (Claude Code, Codex, Cursor...):
 
-## What it does
+> Clone https://github.com/mikecann/telemprompit and make it my own. It's one of Mike
+> Cann's personal tools, so read the README first, change anything specific to his
+> setup to suit mine, then help me get it running.
+
+### Or set it up by hand
+
+You'll need macOS 14 or later, Git, and Swift 5.10 or later from Xcode or the
+Command Line Tools (`xcode-select --install`). Swift fetches
+[PrompterKit](https://github.com/mikecann/prompter-kit) from GitHub when it builds.
+No API keys or `.env` file are needed.
+
+```bash
+git clone https://github.com/mikecann/telemprompit.git
+cd telemprompit
+bash setup_mac.sh
+bash install.sh
+```
+
+`setup_mac.sh` builds and signs a release app at
+`~/Applications/Telemprompit.app`. Launch it from Spotlight.
+`install.sh` links the `telemprompit` command into `~/.local/bin` and prints
+how to add that directory to your `PATH` if needed. You can choose a different
+location with `bash install.sh /path/to/bin`. Keep this clone in place and
+rerun the installer if you move it.
+
+The Elgato Prompter is optional. Without it, the app opens on your main
+screen. To use the Prompter, install DisplayLink Manager and connect the
+screen. **Turn On Elgato Prompter** needs Accessibility permission for the
+app in **System Settings > Privacy & Security > Accessibility**.
+
+## Using it
+
+Open the app and paste your notes with ⌘V. Click, press Space, or use a
+presentation clicker to move to the next line. Press P for auto-scroll,
+⌘, for settings, or M to mirror the text for beam-splitter glass.
+
+```bash
+telemprompit                    # open
+telemprompit start notes.md     # open with a file as the script
+telemprompit restart            # debug rebuild + relaunch
+telemprompit stop
+```
+
+## Features
 
 - Opens on the Elgato Prompter (a DisplayLink display) and fills it, leaving
   room for the taskbar. When the prompter isn't connected it opens as a
@@ -29,7 +87,7 @@ it opens them on the Elgato Prompter, one line at a time.
 - Mirror mode for beam-splitter glass
 - Settings persist in `UserDefaults`
 
-## Controls
+### Controls
 
 | Input | Action |
 |---|---|
@@ -79,36 +137,27 @@ open -g telemprompit://next
   prompter, and **Turn On Elgato Prompter**
 
 **Turn On Elgato Prompter** (also in the View menu) presses the prompter's
-switch in DisplayLink Manager, the same way the taskbar lights button does.
-It needs Accessibility permission the first time.
-
-## Install
-
-```bash
-bash tools/telemprompit/setup_mac.sh
-```
-
-This builds a release app at `~/Applications/Telemprompit.app`. Launch it
-from Spotlight, or put the launcher on your `PATH` with `bash install_mac.sh`
-and run:
-
-```bash
-telemprompit                    # open
-telemprompit start notes.md     # open with a file as the script
-telemprompit restart            # debug rebuild + relaunch
-telemprompit stop
-```
+switch in DisplayLink Manager. It needs Accessibility permission the first time.
 
 ## Development
 
+Run these from the repo root:
+
 ```bash
-swift test --package-path tools/telemprompit
-bash tools/telemprompit/restart.sh
+swift test
+swift build -c release
+bash restart.sh
 ```
 
-The prompter-display lookup and the DisplayLink switch live in the shared
-[`tools/lib/PrompterKit`](../lib/PrompterKit) package, which Taskbar and
-Video HQ also use.
+The tests cover parsing, navigation, settings, model behaviour, window
+placement and click zones. They use fake screen geometry and do not need
+an Elgato Prompter. Test global hotkeys with a real key press or clicker.
+The clipboard test needs access to the macOS pasteboard service. On a
+headless runner or in a managed sandbox, use
+`TELEMPROMPIT_SKIP_PASTEBOARD_TESTS=1 swift test` to skip that test, as CI does.
+
+The display lookup and DisplayLink switch live in the
+[PrompterKit](https://github.com/mikecann/prompter-kit) package.
 
 | Path | What it is |
 |---|---|
@@ -120,3 +169,28 @@ Video HQ also use.
 | `Sources/TelemprompitApp/GlobalHotkeys.swift` | Carbon hotkeys (no Accessibility needed) |
 | `Sources/TelemprompitApp/PrompterSettings.swift` | Persisted settings |
 | `build-app.sh` | Builds, stages, and signs the app bundle |
+
+## Build settings and troubleshooting
+
+- `TELEMPROMPIT_APP_DIR` overrides the app bundle location for build, launch,
+  restart and stop. Set it to an absolute path, for example
+  `TELEMPROMPIT_APP_DIR="$PWD/build/Telemprompit.app" bash setup_mac.sh`.
+- `TELEMPROMPIT_BUILD_CONFIGURATION` chooses the configuration for
+  `build-app.sh`. Setup uses release; restart uses debug.
+- `TELEMPROMPIT_CODESIGN_IDENTITY` selects a signing identity. By default,
+  the build script uses an available Apple Development identity, or ad-hoc
+  signing if there isn't one. Use `-` to request ad-hoc signing explicitly.
+- Settings and saved window positions persist in `UserDefaults`. The bundle
+  identifier stays `com.mikerosoft.telemprompit` so existing installs keep
+  their settings and signing identity.
+- If global Page Up and Page Down interfere with another app, switch them
+  off in **Settings > Controls**.
+- If **Turn On Elgato Prompter** fails, check DisplayLink Manager is running
+  and the app has Accessibility permission. You can also enable the display
+  directly in DisplayLink Manager.
+
+## More tools
+
+You can find my other tools at [mikerosoft.app](https://mikerosoft.app).
+
+MIT licensed.

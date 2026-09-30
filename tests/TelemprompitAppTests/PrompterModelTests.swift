@@ -78,7 +78,11 @@ final class PrompterModelTests: XCTestCase {
         XCTAssertEqual(model.stopCount, 5)
     }
 
-    func testPasteReplacesTheScriptAndIgnoresAnEmptyClipboard() {
+    func testPasteReplacesTheScriptAndIgnoresAnEmptyClipboard() throws {
+        // Headless CI and managed sandboxes may not have access to the pasteboard service.
+        if ProcessInfo.processInfo.environment["TELEMPROMPIT_SKIP_PASTEBOARD_TESTS"] == "1" {
+            throw XCTSkip("Pasteboard integration requires access to the macOS pasteboard service.")
+        }
         let model = makeModel()
         model.next()
         let pasteboard = NSPasteboard(name: NSPasteboard.Name("telemprompit-test-\(UUID().uuidString)"))
