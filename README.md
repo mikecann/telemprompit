@@ -5,8 +5,10 @@ Paste your notes and read them off the Elgato Prompter one line at a time
 macOS
 
 <!-- media: hero -->
-<!-- ![telemprompit](docs/hero.png) -->
-<!-- media: hero -->
+![Telemprompit highlighting the current line of some pasted notes](docs/stepping.png)
+
+[Watch it run (15 seconds)](docs/demo.mp4)
+<!-- /media: hero -->
 
 ## What it is
 
