@@ -28,6 +28,8 @@ struct PrompterSettings: Equatable {
     var readingLine: Double = 0.35
     var showReadingMarker = true
     var mirrorHorizontally = false
+    /// Notion callouts, which hold production cues such as "back to me".
+    var showCallouts = true
     /// Auto-scroll speed in points per second.
     var scrollSpeed: Double = 60
     /// Page Up / Page Down (what presentation clickers send) work in any app.
@@ -72,7 +74,7 @@ extension PrompterSettings: Codable {
     enum CodingKeys: String, CodingKey {
         case fontSize, lineSpacing, itemSpacing, sideMargin, alignment
         case textColor, backgroundColor, highlightColor, upcomingOpacity
-        case readingLine, showReadingMarker, mirrorHorizontally, scrollSpeed
+        case readingLine, showReadingMarker, mirrorHorizontally, showCallouts, scrollSpeed
         case clickerKeysGlobal, globalShortcuts, keepOnTop, followPrompter
     }
 
@@ -96,6 +98,7 @@ extension PrompterSettings: Codable {
         readingLine = value(.readingLine, fallback.readingLine)
         showReadingMarker = value(.showReadingMarker, fallback.showReadingMarker)
         mirrorHorizontally = value(.mirrorHorizontally, fallback.mirrorHorizontally)
+        showCallouts = value(.showCallouts, fallback.showCallouts)
         scrollSpeed = value(.scrollSpeed, fallback.scrollSpeed)
         clickerKeysGlobal = value(.clickerKeysGlobal, fallback.clickerKeysGlobal)
         globalShortcuts = value(.globalShortcuts, fallback.globalShortcuts)

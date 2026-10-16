@@ -34,6 +34,9 @@ rm -rf "$APP_DIR"
 mkdir -p "$APP_DIR/Contents/MacOS" "$APP_DIR/Contents/Resources"
 cp "$BINARY" "$APP_BIN"
 cp "$SCRIPT_DIR/Resources/Info.plist" "$APP_DIR/Contents/Info.plist"
+# The app reads an optional NOTION_API_KEY from this clone's .env, however
+# it's launched.
+plutil -insert TelemprompitDotenvPath -string "$SCRIPT_DIR/.env" "$APP_DIR/Contents/Info.plist"
 chmod +x "$APP_BIN"
 
 if [[ -f "$ICON_SOURCE" ]]; then

@@ -8,7 +8,8 @@ import SwiftUI
 @MainActor
 final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
     private let model = PrompterModel()
-    private lazy var prompter = PrompterWindowController(model: model)
+    private let notion = NotionPicker.live()
+    private lazy var prompter = PrompterWindowController(model: model, notion: notion)
     private let hotkeys = GlobalHotkeys()
     private var settingsWindow: NSWindow?
     private var cancellables: Set<AnyCancellable> = []
@@ -94,6 +95,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
     private func settingsView() -> some View {
         SettingsView(
             model: model,
+            notion: notion,
             movePrompter: { [weak self] in self?.prompter.placeOnPreferredScreen() },
             turnOnPrompter: { [weak self] in self?.turnOnPrompter(nil) }
         )
@@ -125,6 +127,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
     @objc func biggerText(_ sender: Any?) { model.changeFontSize(by: 4) }
     @objc func smallerText(_ sender: Any?) { model.changeFontSize(by: -4) }
     @objc func toggleMirror(_ sender: Any?) { model.settings.mirrorHorizontally.toggle() }
+    @objc func toggleCallouts(_ sender: Any?) { model.settings.showCallouts.toggle() }
     @objc func toggleKeepOnTop(_ sender: Any?) { model.settings.keepOnTop.toggle() }
     @objc func toggleFill(_ sender: Any?) { prompter.toggleFill() }
     @objc func moveToPrompter(_ sender: Any?) { prompter.placeOnPreferredScreen() }
@@ -167,6 +170,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
             item.title = model.isScrolling ? "Pause Auto-scroll" : "Start Auto-scroll"
         case #selector(toggleMirror(_:)):
             item.state = model.settings.mirrorHorizontally ? .on : .off
+        case #selector(toggleCallouts(_:)):
+            item.state = model.settings.showCallouts ? .on : .off
         case #selector(toggleKeepOnTop(_:)):
             item.state = model.settings.keepOnTop ? .on : .off
         default:
@@ -214,6 +219,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSMenuItemValidation {
         view.addItem(withTitle: "Bigger Text", action: #selector(biggerText(_:)), keyEquivalent: "+")
         view.addItem(withTitle: "Smaller Text", action: #selector(smallerText(_:)), keyEquivalent: "-")
         view.addItem(withTitle: "Mirror Horizontally", action: #selector(toggleMirror(_:)), keyEquivalent: "M")
+        view.addItem(withTitle: "Show Callouts", action: #selector(toggleCallouts(_:)), keyEquivalent: "C")
         view.addItem(.separator())
         view.addItem(withTitle: "Fill Display", action: #selector(toggleFill(_:)), keyEquivalent: "f")
         view.addItem(withTitle: "Keep on Top", action: #selector(toggleKeepOnTop(_:)), keyEquivalent: "")

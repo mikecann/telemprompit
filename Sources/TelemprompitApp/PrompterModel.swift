@@ -10,7 +10,8 @@ final class PrompterModel: ObservableObject {
         didSet {
             guard scriptText != oldValue else { return }
             let previousItems = items
-            items = ScriptParser.parse(scriptText)
+            parsedItems = ScriptParser.parse(scriptText)
+            showParsedItems()
             current = PromptNavigator.keepPlace(of: current, from: previousItems, in: items)
         }
     }
@@ -21,6 +22,7 @@ final class PrompterModel: ObservableObject {
     /// The display the prompter window is on, for the settings window.
     @Published var displayStatus = ""
 
+    /// The items on screen: `parsedItems` without any callouts the settings hide.
     @Published private(set) var items: [PromptItem] = []
     @Published private(set) var current: Int?
     @Published private(set) var offset: CGFloat = 0
@@ -30,8 +32,16 @@ final class PrompterModel: ObservableObject {
             let clamped = settings.clamped()
             if clamped != settings { settings = clamped; return }
             PrompterSettings.save(settings, to: defaults)
+            if settings.showCallouts != calloutsShown { toggleCallouts() }
         }
     }
+
+    private var parsedItems: [PromptItem] = []
+    /// The index in `parsedItems` of each item in `items`.
+    private var shownIndices: [Int] = []
+    /// Compared with the setting rather than `oldValue`, which the clamping
+    /// re-assignment in `settings.didSet` replaces.
+    private var calloutsShown: Bool
 
     private(set) var tops: [Int: CGFloat] = [:]
     private(set) var contentHeight: CGFloat = 0
@@ -41,7 +51,9 @@ final class PrompterModel: ObservableObject {
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
-        settings = PrompterSettings.load(from: defaults)
+        let loaded = PrompterSettings.load(from: defaults)
+        settings = loaded
+        calloutsShown = loaded.showCallouts
     }
 
     // MARK: - Script
@@ -60,6 +72,24 @@ final class PrompterModel: ObservableObject {
         else { return false }
         load(text)
         return true
+    }
+
+    var hasCallouts: Bool { parsedItems.contains { $0.kind == .cue } }
+
+    private func showParsedItems() {
+        calloutsShown = settings.showCallouts
+        shownIndices = parsedItems.indices.filter { calloutsShown || parsedItems[$0].kind != .cue }
+        items = shownIndices.map { parsedItems[$0] }
+    }
+
+    /// Callouts are never stops, so the current line is still there after
+    /// showing or hiding them. Mapping through `parsedItems` finds the exact
+    /// line even when the script repeats it.
+    private func toggleCallouts() {
+        let currentParsed = current.map { shownIndices[$0] }
+        showParsedItems()
+        current = currentParsed.flatMap { shownIndices.firstIndex(of: $0) } ?? PromptNavigator.first(in: items)
+        anchorToCurrent(animated: false)
     }
 
     var stopCount: Int { PromptNavigator.stops(in: items).count }

@@ -16,6 +16,8 @@ A teleprompter I use for talking-head recordings. You paste in your notes, plain
 
 You can step through line by line or let it auto-scroll, and a presentation clicker works from any app, which is nice when I'm demoing something else at the same time.
 
+If you've got a Notion key set up, the empty prompter also has a dropdown of your recent Notion projects, so you can pull a script straight in without copying and pasting. And if your script is full of callouts for camera and screen cues, you can hide them with C.
+
 ![Telemprompit](docs/header.png)
 
 ![Telemprompit stepping through notes](docs/ss1.png)
@@ -35,7 +37,8 @@ Paste this into your AI coding agent (Claude Code, Codex, Cursor...):
 You'll need macOS 14 or later, Git, and Swift 5.10 or later from Xcode or the
 Command Line Tools (`xcode-select --install`). Swift fetches
 [PrompterKit](https://github.com/mikecann/prompter-kit) from GitHub when it builds.
-No API keys or `.env` file are needed.
+No API keys are needed. The Notion dropdown is optional, see
+[Loading scripts from Notion](#loading-scripts-from-notion).
 
 ```bash
 git clone https://github.com/mikecann/telemprompit.git
@@ -86,6 +89,11 @@ telemprompit stop
 - Headings show as small section labels, Notion callouts as cues, and fenced
   code as a dimmed block. Only real lines are navigation stops, so clicks
   never land on a heading
+- Hide the callouts with C, the hand button on the hover bar, **View > Show
+  Callouts** or **Settings > Script**. You stay on the same line, and the
+  choice is remembered
+- Load a script from one of your recent Notion projects, from the empty
+  prompter or **Settings > Script**
 - Optional smooth auto-scroll with adjustable speed. The highlight follows the
   reading line as it scrolls
 - Mirror mode for beam-splitter glass
@@ -103,6 +111,7 @@ telemprompit stop
 | `[` / `]` | Slower / faster |
 | `+` / `-` | Bigger / smaller text |
 | M | Mirror horizontally |
+| C | Show or hide callouts |
 | ⌘V | Replace the script with the clipboard |
 | ⌘E | Edit the script |
 | ⌘, | Settings |
@@ -132,7 +141,8 @@ open -g telemprompit://next
 
 ## Settings
 
-- **Script**: edit the pasted notes directly. Edits keep your place
+- **Script**: edit the pasted notes directly (edits keep your place), load a
+  script from Notion, and show or hide callouts
 - **Appearance**: font size, line spacing, gap between lines, side margins,
   left or centred text, text/background/highlight colours, how bright
   upcoming lines are, reading-line position, the reading-line marker, and
@@ -142,6 +152,29 @@ open -g telemprompit://next
 
 **Turn On Elgato Prompter** (also in the View menu) presses the prompter's
 switch in DisplayLink Manager. It needs Accessibility permission the first time.
+
+## Loading scripts from Notion
+
+Put a Notion integration key in this clone's `.env`:
+
+```bash
+cp .env.example .env
+# then set NOTION_API_KEY=... (NOTION_TOKEN works too)
+```
+
+Share your projects database with that integration, then rebuild with
+`bash setup_mac.sh` so the app knows where the `.env` is. An environment
+variable with the same name wins over the file.
+
+The dropdown lists the 25 most recently edited projects that aren't `Done` or
+`Cancelled`. Picking one downloads the page and loads its **Script** section,
+which is a toggle heading on my project pages next to Notes, Thumb & Title
+and Links. A page without a Script heading loads whole.
+
+The database is my Projects database, set by `projectsDataSourceID` in
+`Sources/TelemprompitApp/NotionClient.swift`. Change it, and the skipped
+statuses next to it, to use your own. It's the same database
+[Video HQ](https://github.com/mikecann/video-hq) uses.
 
 ## Development
 
@@ -154,8 +187,8 @@ bash restart.sh
 ```
 
 The tests cover parsing, navigation, settings, model behaviour, window
-placement and click zones. They use fake screen geometry and do not need
-an Elgato Prompter. Test global hotkeys with a real key press or clicker.
+placement, click zones and the Notion dropdown. They use fake screen geometry
+and a fake Notion, so they need no Elgato Prompter, key or network. Test global hotkeys with a real key press or clicker.
 The clipboard test needs access to the macOS pasteboard service. On a
 headless runner or in a managed sandbox, use
 `TELEMPROMPIT_SKIP_PASTEBOARD_TESTS=1 swift test` to skip that test, as CI does.
@@ -172,6 +205,8 @@ The display lookup and DisplayLink switch live in the
 | `Sources/TelemprompitApp/PrompterWindowController.swift` | Borderless window, placement, keys, clicks |
 | `Sources/TelemprompitApp/GlobalHotkeys.swift` | Carbon hotkeys (no Accessibility needed) |
 | `Sources/TelemprompitApp/PrompterSettings.swift` | Persisted settings |
+| `Sources/TelemprompitApp/NotionClient.swift` | Notion projects and page markdown, and finding the key |
+| `Sources/TelemprompitApp/NotionPicker.swift` | The Notion dropdown and pulling out the Script section |
 | `build-app.sh` | Builds, stages, and signs the app bundle |
 
 ## Build settings and troubleshooting
@@ -184,6 +219,9 @@ The display lookup and DisplayLink switch live in the
 - `TELEMPROMPIT_CODESIGN_IDENTITY` selects a signing identity. By default,
   the build script uses an available Apple Development identity, or ad-hoc
   signing if there isn't one. Use `-` to request ad-hoc signing explicitly.
+- The app reads `NOTION_API_KEY` from the `.env` in the clone it was built
+  from. `build-app.sh` records that path in the app bundle, so rebuild after
+  moving the clone.
 - Settings and saved window positions persist in `UserDefaults`. The bundle
   identifier stays `com.mikerosoft.telemprompit` so existing installs keep
   their settings and signing identity.

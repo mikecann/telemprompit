@@ -17,6 +17,7 @@ private struct ContentHeightKey: PreferenceKey {
 
 struct PrompterView: View {
     @ObservedObject var model: PrompterModel
+    let notion: NotionPicker
     var openSettings: () -> Void = {}
 
     private var settings: PrompterSettings { model.settings }
@@ -30,7 +31,7 @@ struct PrompterView: View {
                 Color(hex: settings.backgroundColor, fallback: .black)
 
                 if model.items.isEmpty {
-                    EmptyScriptView(settings: settings)
+                    EmptyScriptView(model: model, notion: notion)
                 } else {
                     ScriptColumn(items: model.items, current: model.current, settings: settings)
                         .frame(
@@ -197,7 +198,8 @@ private struct ReadingMarker: View {
 }
 
 private struct EmptyScriptView: View {
-    let settings: PrompterSettings
+    @ObservedObject var model: PrompterModel
+    let notion: NotionPicker
 
     var body: some View {
         VStack(spacing: 14) {
@@ -208,8 +210,12 @@ private struct EmptyScriptView: View {
             Text("⌘V pastes the clipboard. Click, Space or → for the next line.")
                 .font(.system(size: 17, design: .rounded))
                 .multilineTextAlignment(.center)
+            NotionScriptMenu(picker: notion, model: model)
+                .padding(.top, 14)
+                // The prompter is dark whatever the system appearance is.
+                .environment(\.colorScheme, .dark)
         }
-        .foregroundStyle(Color(hex: settings.textColor).opacity(0.6))
+        .foregroundStyle(Color(hex: model.settings.textColor).opacity(0.6))
         .padding(40)
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
@@ -242,6 +248,15 @@ private struct HandleBar: View {
                 .background(WindowDragArea())
                 .help("Drag to move")
             if hovering {
+                if model.hasCallouts {
+                    Button {
+                        model.settings.showCallouts.toggle()
+                    } label: {
+                        Image(systemName: model.settings.showCallouts ? "hand.point.right.fill" : "hand.point.right")
+                            .opacity(model.settings.showCallouts ? 1 : 0.5)
+                    }
+                    .help(model.settings.showCallouts ? "Hide callouts (C)" : "Show callouts (C)")
+                }
                 Button(action: openSettings) {
                     Image(systemName: "gearshape.fill")
                 }

@@ -47,6 +47,8 @@ bash restart.sh
   environments, set `TELEMPROMPIT_SKIP_PASTEBOARD_TESTS=1` to skip only that test,
   as CI does. Keep the full default suite enabled on a normal desktop.
   Real display switching still needs DisplayLink Manager, hardware and permission.
+- The Notion dropdown reads `NOTION_API_KEY` from this clone's `.env`. Keep its
+  tests on the fake transport and fake source, with no network or key.
 
 ### Build and install
 

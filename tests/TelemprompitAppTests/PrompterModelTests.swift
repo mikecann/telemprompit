@@ -121,6 +121,41 @@ final class PrompterModelTests: XCTestCase {
         XCTAssertTrue(model.items.isEmpty)
     }
 
+    func testHidingCalloutsRemovesCuesAndKeepsYourPlace() {
+        let model = PrompterModel(defaults: UserDefaults(suiteName: "telemprompit-model-\(UUID().uuidString)")!)
+        model.load("So.\n<callout icon=\"💡\">\n\tback to me\n</callout>\nSo.\nSo.")
+        XCTAssertTrue(model.hasCallouts)
+        model.next() // The second "So.", straight after the callout.
+        XCTAssertEqual(model.current, 2)
+
+        model.settings.showCallouts = false
+        XCTAssertEqual(model.items, [.line("So."), .line("So."), .line("So.")])
+        XCTAssertEqual(model.current, 1)
+        XCTAssertEqual(model.position, 2)
+
+        model.settings.showCallouts = true
+        XCTAssertEqual(model.items[1], .cue("back to me"))
+        XCTAssertEqual(model.current, 2)
+        XCTAssertEqual(model.position, 2)
+    }
+
+    func testHiddenCalloutsStayHiddenForTheNextScriptAndAfterARestart() {
+        let defaults = UserDefaults(suiteName: "telemprompit-model-\(UUID().uuidString)")!
+        let model = PrompterModel(defaults: defaults)
+        model.settings.showCallouts = false
+        model.load("<callout>\n\tme\n</callout>\nHello")
+        XCTAssertEqual(model.items, [.line("Hello")])
+        XCTAssertTrue(model.hasCallouts)
+
+        let reopened = PrompterModel(defaults: defaults)
+        reopened.load("<callout>\n\tme\n</callout>\nHello")
+        XCTAssertEqual(reopened.items, [.line("Hello")])
+    }
+
+    func testAScriptWithoutCalloutsHasNothingToHide() {
+        XCTAssertFalse(makeModel().hasCallouts)
+    }
+
     func testSettingsArePersistedAndClamped() {
         let defaults = UserDefaults(suiteName: "telemprompit-model-\(UUID().uuidString)")!
         let model = PrompterModel(defaults: defaults)

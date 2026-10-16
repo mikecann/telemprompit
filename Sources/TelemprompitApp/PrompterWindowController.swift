@@ -33,7 +33,7 @@ final class PrompterWindowController: NSObject, NSWindowDelegate {
     private var isPlacing = false
     private var frameBeforeFill: NSRect?
 
-    init(model: PrompterModel) {
+    init(model: PrompterModel, notion: NotionPicker) {
         self.model = model
         window = PrompterWindow(
             contentRect: NSRect(origin: .zero, size: WindowPlacement.fallbackSize),
@@ -53,7 +53,11 @@ final class PrompterWindowController: NSObject, NSWindowDelegate {
         window.delegate = self
         window.onPaste = { [weak model] in model?.pasteFromClipboard() }
         window.contentView = PrompterHostingView(
-            rootView: PrompterView(model: model, openSettings: { [weak self] in self?.openSettings() })
+            rootView: PrompterView(
+                model: model,
+                notion: notion,
+                openSettings: { [weak self] in self?.openSettings() }
+            )
         )
 
         model.$settings
@@ -198,6 +202,7 @@ final class PrompterWindowController: NSObject, NSWindowDelegate {
             case "=", "+": model.changeFontSize(by: 4)
             case "-": model.changeFontSize(by: -4)
             case "m": model.settings.mirrorHorizontally.toggle()
+            case "c": model.settings.showCallouts.toggle()
             default: return false
             }
         }

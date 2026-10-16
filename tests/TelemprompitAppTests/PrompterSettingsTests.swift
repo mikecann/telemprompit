@@ -8,6 +8,7 @@ final class PrompterSettingsTests: XCTestCase {
         settings.mirrorHorizontally = true
         settings.textColor = "#FFEE00"
         settings.alignment = .center
+        settings.showCallouts = false
         let decoded = try JSONDecoder().decode(
             PrompterSettings.self,
             from: JSONEncoder().encode(settings)
@@ -23,6 +24,10 @@ final class PrompterSettingsTests: XCTestCase {
         var expected = PrompterSettings.defaults
         expected.fontSize = 70
         XCTAssertEqual(decoded, expected)
+    }
+
+    func testCalloutsShowByDefault() {
+        XCTAssertTrue(PrompterSettings.defaults.showCallouts)
     }
 
     func testValuesAreClampedToUsableRanges() {

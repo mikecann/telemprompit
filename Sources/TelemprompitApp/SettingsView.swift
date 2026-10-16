@@ -6,12 +6,13 @@ struct SettingsView: View {
     typealias Tab = SettingsTab
 
     @ObservedObject var model: PrompterModel
+    let notion: NotionPicker
     let movePrompter: () -> Void
     let turnOnPrompter: () -> Void
 
     var body: some View {
         TabView(selection: $model.settingsTab) {
-            ScriptTab(model: model)
+            ScriptTab(model: model, notion: notion)
                 .tabItem { Label("Script", systemImage: "text.alignleft") }
                 .tag(Tab.script)
             AppearanceTab(settings: $model.settings)
@@ -33,18 +34,22 @@ struct SettingsView: View {
 
 private struct ScriptTab: View {
     @ObservedObject var model: PrompterModel
+    let notion: NotionPicker
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Paste plain text, markdown or Notion bullets. List markers and formatting are removed; nesting is kept.")
                 .font(.callout)
                 .foregroundStyle(.secondary)
+            NotionScriptMenu(picker: notion, model: model)
             TextEditor(text: $model.scriptText)
                 .font(.system(size: 13, design: .monospaced))
                 .border(Color.secondary.opacity(0.3))
             HStack {
                 Button("Replace with Clipboard") { model.pasteFromClipboard() }
                 Button("Clear") { model.load("") }
+                Toggle("Show callouts", isOn: $model.settings.showCallouts)
+                    .help("Notion callouts, such as camera and screen cues. C toggles them on the prompter.")
                 Spacer()
                 Text("\(model.stopCount) lines")
                     .foregroundStyle(.secondary)
@@ -89,6 +94,7 @@ private struct AppearanceTab: View {
                 settings.globalShortcuts = keep.globalShortcuts
                 settings.keepOnTop = keep.keepOnTop
                 settings.followPrompter = keep.followPrompter
+                settings.showCallouts = keep.showCallouts
             }
         }
         .formStyle(.grouped)
@@ -113,7 +119,7 @@ private struct ControlsTab: View {
                 Toggle("⌃⌥→ next, ⌃⌥← previous, ⌃⌥Space auto-scroll", isOn: $settings.globalShortcuts)
             }
             Section("When the prompter window is focused") {
-                Text("Click, Space, →, ↓, Return or Page Down: next line\nRight-click, ←, ↑ or Page Up: previous line\nHome / End: first / last line. Scroll wheel: fine-tune\n⌘V: paste new notes. + / −: text size. M: mirror")
+                Text("Click, Space, →, ↓, Return or Page Down: next line\nRight-click, ←, ↑ or Page Up: previous line\nHome / End: first / last line. Scroll wheel: fine-tune\n⌘V: paste new notes. + / −: text size. M: mirror. C: callouts")
                     .font(.callout).foregroundStyle(.secondary)
             }
             Section("Window") {
